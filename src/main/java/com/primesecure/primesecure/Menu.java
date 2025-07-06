@@ -3,7 +3,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.primesecure.primesecure;
-
+import java.util.ArrayList;
+import java.util.InputMismatchException;
+import java.util.List;
+import java.util.Random; // Necesitamos esta clase para generar números aleatorios
 import java.util.Scanner;
 
 /**
@@ -12,62 +15,118 @@ import java.util.Scanner;
  */
 public class Menu {
      public static void iniciar() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Iniciando la aplicacion de PrimeSecure...");
-
-        // --- PASO 1: Crear el RECURSO COMPARTIDO ---
-        // Creamos UNA SOLA instancia de PrimesList. Esta es la lista que
-        // TODOS los hilos compartirán. Es fundamental que sea la misma instancia.
         PrimeList sharedPrimesList = new PrimeList();
-        System.out.println("Lista de primos compartida ha sido creada.\n");
+        Scanner scanner = new Scanner(System.in);
+        
+        while (true) {
+            System.out.println("\n--- MENU PRIMESECURE ---");
+            System.out.println("1. Agregar un 'Codigo Primo' (Manual)");
+            System.out.println("2. Eliminar un 'Codigo Primo'");
+            System.out.println("3. Listar todos los 'Codigos Primos'");
+            System.out.println("4. Salir");
+            System.out.println("5. Agregar 20 'Codigos Primos' aleatorios (1-100)"); // Nueva opción
+            System.out.print("Seleccione una opcion: ");
 
-        // --- PASO 2: Crear los HILOS TRABAJADORES ---
-        // Vamos a crear varios hilos. Cada uno intentará agregar un número diferente
-        // a la MISMA lista 'sharedPrimesList'.
-        // Mezclamos números primos y no primos para ver cómo funciona la validación.
-        System.out.println("Creando hilos para agregar 'Codigos Primos'...");
-        Thread t1 = new PrimeAdderThread(sharedPrimesList, 17);
-        Thread t2 = new PrimeAdderThread(sharedPrimesList, 20); // No es primo
-        Thread t3 = new PrimeAdderThread(sharedPrimesList, 29);
-        Thread t4 = new PrimeAdderThread(sharedPrimesList, 30); // No es primo
-        Thread t5 = new PrimeAdderThread(sharedPrimesList, 41);
+            int opcion = -1;
+            try {
+                opcion = scanner.nextInt();
+            } catch (InputMismatchException e) {
+                System.err.println("Error: Por favor, ingrese solo un numero.");
+                scanner.next(); 
+                continue; 
+            }
 
-        // --- PASO 3: Iniciar los HILOS ---
-        // Este es el momento clave. llamar a .start() le dice a la JVM:
-        // "Crea un nuevo hilo de ejecución y ejecuta el método run() de este objeto en él".
-        // NO llames a .run() directamente, porque eso ejecutaría el código en el hilo principal,
-        // uno tras otro (secuencialmente), y perderíamos toda la concurrencia.
-        System.out.println("Iniciando hilos para que trabajen en paralelo...\n");
-        t1.start();
-        t2.start();
-        t3.start();
-        t4.start();
-        t5.start();
+            switch (opcion) {
+                case 1:
+                    // ... (el código para agregar manualmente se mantiene igual)
+                    System.out.print("Ingrese el numero que desea agregar: ");
+                    try {
+                        int numeroParaAgregar = scanner.nextInt();
+                        Thread adderThread = new PrimeAdderThread(sharedPrimesList, numeroParaAgregar);
+                        adderThread.start(); 
+                        adderThread.join(); 
+                    } catch (InputMismatchException e) {
+                        System.err.println("Error: Debe ingresar un numero entero valido.");
+                        scanner.next();
+                    } catch (InterruptedException e) {
+                        System.err.println("El hilo de adicion fue interrumpido.");
+                    }
+                    break;
+                
+                case 2:
+                    // ... (el código para eliminar se mantiene igual)
+                    if (sharedPrimesList.isEmpty()) {
+                        System.out.println("La lista está vacia, no hay nada que eliminar.");
+                        break;
+                    }
+                    System.out.println("Lista actual: " + sharedPrimesList);
+                    System.out.print("Ingrese el indice (posicion) del numero que desea eliminar: ");
+                    try {
+                        int indiceParaEliminar = scanner.nextInt();
+                        Integer numeroEliminado = sharedPrimesList.remove(indiceParaEliminar);
+                        System.out.println("Numero " + numeroEliminado + " eliminado correctamente.");
+                    } catch (InputMismatchException | IndexOutOfBoundsException e) {
+                        System.err.println("Error: Indice no valido.");
+                        if (e instanceof InputMismatchException) scanner.next();
+                    }
+                    break;
 
-        // --- PASO 4: Esperar a que TODOS los hilos terminen ---
-        // El hilo principal (main) no debe continuar hasta que todos los trabajadores hayan terminado.
-        // El método .join() pausa el hilo actual (main) y espera a que el hilo sobre el que se llama
-        // (por ej. t1) complete su ejecución.
-        // Lo ponemos en un try-catch porque join() puede lanzar una InterruptedException.
-        try {
-            t1.join();
-            t2.join();
-            t3.join();
-            t4.join();
-            t5.join();
-        } catch (InterruptedException e) {
-            System.err.println("El hilo principal fue interrumpido mientras esperaba.");
-            Thread.currentThread().interrupt(); // Buena práctica
+                case 3:
+                    // ... (el código para listar se mantiene igual)
+                    if (sharedPrimesList.isEmpty()) {
+                        System.out.println("La lista de 'Codigos Primos' esta actualmente vacia.");
+                    } else {
+                        System.out.println("\n--- Lista de Codigos Primos ---");
+                        System.out.println(sharedPrimesList);
+                        System.out.println("Total de codigos: " + sharedPrimesList.getPrimesCount());
+                        System.out.println("----------------------------");
+                    }
+                    break;
+
+                case 4:
+                    System.out.println("Saliendo de la aplicacion. ¡Hasta luego!");
+                    scanner.close(); 
+                    return; 
+
+                // =============== LÓGICA ===============
+                case 5:
+                    System.out.println("Iniciando la adicion de 20 numeros aleatorios...");
+                    
+                    // 1. Creamos un generador de aleatorios y una lista para guardar nuestros hilos.
+                    Random random = new Random();
+                    List<Thread> threads = new ArrayList<>();
+                    
+                    // 2. Generamos 20 números y creamos un hilo para cada uno.
+                    for (int i = 0; i < 20; i++) {
+                        // Genera un número entre 1 y 100 (incluidos).
+                        int numeroAleatorio = random.nextInt(100) + 1; 
+                        // Creamos un hilo trabajador para ESE número.
+                        Thread t = new PrimeAdderThread(sharedPrimesList, numeroAleatorio);
+                        threads.add(t); // Lo guardamos en nuestra lista de hilos.
+                    }
+                    
+                    // 3. Iniciamos todos los hilos para que se ejecuten en paralelo.
+                    System.out.println("Lanzando 20 hilos para verificar los numeros...");
+                    for (Thread t : threads) {
+                        t.start();
+                    }
+                    
+                    // 4. Esperamos a que todos los hilos terminen su trabajo.
+                    try {
+                        for (Thread t : threads) {
+                            t.join(); // El hilo principal espera a que cada hilo trabajador termine.
+                        }
+                    } catch (InterruptedException e) {
+                        System.err.println("El proceso de espera fue interrumpido.");
+                    }
+                    
+                    System.out.println("\nProceso completado. Todos los hilos han terminado.");
+                    System.out.println("Revisa la lista actualizada con la opcion 3.");
+                    break;
+                
+                default:
+                    System.err.println("Opcion no valida. Por favor, intente de nuevo.");
+            }
         }
-
-        // --- PASO 5: Mostrar los resultados FINALES ---
-        // Este código solo se ejecutará después de que todos los hilos hayan terminado su trabajo.
-        System.out.println("\nTodos los hilos han terminado su ejecucion.");
-        System.out.println("=============================================");
-        System.out.println("Resultado Final de la Base de Datos de Codigos Primos:");
-        System.out.println("Codigos Primos en la lista: " + sharedPrimesList);
-        System.out.println("Cantidad total de Codigos Primos: " + sharedPrimesList.getPrimesCount());
-        System.out.println("=============================================");
-
-    }
+     }
 }
