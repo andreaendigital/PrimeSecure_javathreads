@@ -3,7 +3,7 @@
  */
 
 package com.primesecure.primesecure;
-
+ 
 /**
  *
  * @author Andrea
@@ -11,8 +11,8 @@ package com.primesecure.primesecure;
 public class PrimeSecure {
 
     public static void main(String[] args) {
-         Menu menu = new Menu();
-        menu.iniciar();
+        Menu menu = new Menu();
+        Menu.iniciar();
 
     }
 }
