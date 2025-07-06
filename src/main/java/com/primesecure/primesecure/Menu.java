@@ -15,9 +15,14 @@ import java.util.Scanner;
  */
 public class Menu {
      public static void iniciar() {
+        // --- CONFIGURACIÓN INICIAL ---
+        // 1. Creamos la lista compartida. Estará viva mientras el programa se ejecute.
         PrimeList sharedPrimesList = new PrimeList();
+
+        // 2. Creamos un Scanner para leer la entrada del usuario.
         Scanner scanner = new Scanner(System.in);
         
+        // Bucle infinito que mantiene el menú activo hasta que el usuario decida salir.
         while (true) {
             System.out.println("\n--- MENU PRIMESECURE ---");
             System.out.println("1. Agregar un 'Codigo Primo' (Manual)");
@@ -32,29 +37,36 @@ public class Menu {
                 opcion = scanner.nextInt();
             } catch (InputMismatchException e) {
                 System.err.println("Error: Por favor, ingrese solo un numero.");
-                scanner.next(); 
-                continue; 
+                scanner.next(); // Limpia el buffer del scanner
+                continue; // Vuelve al inicio del bucle
             }
 
             switch (opcion) {
                 case 1:
-                    // ... (el código para agregar manualmente se mantiene igual)
+      
                     System.out.print("Ingrese el numero que desea agregar: ");
                     try {
                         int numeroParaAgregar = scanner.nextInt();
+                    
+                        // Creamos un hilo NUEVO para cada número que se intenta agregar.
+                        // Esta es la implementación de "Programando por hilos".
                         Thread adderThread = new PrimeAdderThread(sharedPrimesList, numeroParaAgregar);
-                        adderThread.start(); 
+                        adderThread.start(); // El hilo empieza a trabajar en segundo plano.
+                        
+                              
+                        // Usamos join() para que el menú espere a que el hilo termine.
+                        // Así podemos ver el resultado de la operación inmediatamente.                        
                         adderThread.join(); 
+                        
                     } catch (InputMismatchException e) {
                         System.err.println("Error: Debe ingresar un numero entero valido.");
-                        scanner.next();
+                        scanner.next();// Limpia el buffer
                     } catch (InterruptedException e) {
                         System.err.println("El hilo de adicion fue interrumpido.");
                     }
                     break;
                 
                 case 2:
-                    // ... (el código para eliminar se mantiene igual)
                     if (sharedPrimesList.isEmpty()) {
                         System.out.println("La lista está vacia, no hay nada que eliminar.");
                         break;
@@ -72,7 +84,7 @@ public class Menu {
                     break;
 
                 case 3:
-                    // ... (el código para listar se mantiene igual)
+                    
                     if (sharedPrimesList.isEmpty()) {
                         System.out.println("La lista de 'Codigos Primos' esta actualmente vacia.");
                     } else {
